@@ -26,12 +26,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # adds DATABASE_URL to the environment variables for use below
+      - run: echo "DATABASE_URL=${PR_${{ github.event.number }}_DATABASE_URL}" >> "$GITHUB_ENV"
+
       - name: Run Migrations
-        run: |
-          # adds DATABASE_URL to the environment variables
-          echo DATABASE_URL=${PR_${{ github.event.number }}_DATABASE_URL} >> .env
-          
-          pnpm run db:migrate
+        run: pnpm run db:migrate
 
       - name: Deploy
         id: deploy
