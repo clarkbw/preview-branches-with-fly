@@ -2,10 +2,7 @@ name: Preview Deployment
 on: [pull_request]
 
 env:
-  NEON_DATABASE_USERNAME: ${{ secrets.NEON_DATABASE_USERNAME }} # change this to your database username
   GH_TOKEN: ${{ secrets.GH_TOKEN }} # Required for commenting on pull requests for private repos
-  NEON_API_KEY: ${{ secrets.NEON_API_KEY }} # You can generate a an API key in your account settings
-  NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }} # You can find this in your project settings
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }} # You can generate a Fly API token in your account settings
 
 jobs:
@@ -29,38 +26,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Get branch name
-        id: branch-name
-        uses: tj-actions/branch-names@v8
-
-      - name: Create Neon Branch
-        id: create-branch
-        uses: neondatabase/create-branch-action@v4
-        with:
-          project_id: ${{ env.NEON_PROJECT_ID }}
-          # parent: dev # optional (defaults to your primary branch)
-          branch_name: preview/pr-${{ github.event.number }}-${{ steps.branch-name.outputs.current_branch }}
-          username: ${{ env.NEON_DATABASE_USERNAME }}
-          api_key: ${{ env.NEON_API_KEY }}
-
       - name: Run Migrations
         run: |
-          touch .env
-
-          echo DATABASE_URL=${{ steps.create-branch.outputs.db_url_with_pooler }}?sslmode=require >> .env
-
+          # adds DATABASE_URL to the environment variables
+          echo DATABASE_URL=${PR_${{ github.event.number }}_DATABASE_URL} >> .env
+          
           pnpm run db:migrate
 
       - name: Deploy
         id: deploy
         uses: superfly/fly-pr-review-apps@1.2.0
         with:
-          secrets: DATABASE_URL=${{ steps.create-branch.outputs.db_url }}?sslmode=require
+          secrets: ${{ env.DATABASE_URL }}
 
       - name: Comment on Pull Request
         uses: thollander/actions-comment-pull-request@v2
         with:
           # GITHUB_TOKEN: ${{ env.GH_TOKEN }} # Required for commenting on pull requests for private repos
+          # ${{ steps.create-branch.outputs.branch_id }} is no longer available
           message: |
             Fly Preview URL :balloon: : ${{ steps.deploy.outputs.url }}
-            Neon branch :elephant: : https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches/${{ steps.create-branch.outputs.branch_id }}
+            Neon branch :elephant: : https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches/
+            
