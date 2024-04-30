@@ -28,13 +28,11 @@ jobs:
         uses: neondatabase/create-branch-action@v4
 
       - run: pnpm run db:migrate
-        env:
-          DATABASE_URL: ${{ steps.create-branch.outputs.db_url_with_pooler }}
 
       - id: deploy
         uses: superfly/fly-pr-review-apps@1.2.0
         with:
-          secrets: DATABASE_URL=${{ steps.create-branch.outputs.db_url }}
+          secrets: ${{ env.DATABASE_URL }}
 
       - uses: thollander/actions-comment-pull-request@v2
         with:
