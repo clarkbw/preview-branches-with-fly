@@ -18,32 +18,25 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      - name: Use Node.js 18
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install
+      - run: pnpm install
 
       # adds DATABASE_URL to the environment variables for use below
       - run: echo "DATABASE_URL=${PR_${{ github.event.number }}_DATABASE_URL}" >> "$GITHUB_ENV"
 
-      - name: Run Migrations
-        run: pnpm run db:migrate
+      - run: pnpm run db:migrate
 
-      - name: Deploy
-        id: deploy
+      - id: deploy
         uses: superfly/fly-pr-review-apps@1.2.0
         with:
           secrets: ${{ env.DATABASE_URL }}
 
-      - name: Comment on Pull Request
-        uses: thollander/actions-comment-pull-request@v2
+      - uses: thollander/actions-comment-pull-request@v2
         with:
           # GITHUB_TOKEN: ${{ env.GH_TOKEN }} # Required for commenting on pull requests for private repos
-          # ${{ steps.create-branch.outputs.branch_id }} is no longer available
           message: |
             Fly Preview URL :balloon: : ${{ steps.deploy.outputs.url }}
-            Neon branch :elephant: : https://console.neon.tech/app/projects/${{ secrets.NEON_PROJECT_ID }}/branches/
-            
+            Neon branch :elephant: : ${{ env.NEON_CONSOLE_BRANCH_URL }}
