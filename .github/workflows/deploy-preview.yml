@@ -26,6 +26,8 @@ jobs:
 
       - id: create-branch
         uses: neondatabase/create-branch-action@v4
+        with:
+          api_key: ${{ secrets.NEON_API_KEY }}
 
       - run: pnpm run db:migrate
 
