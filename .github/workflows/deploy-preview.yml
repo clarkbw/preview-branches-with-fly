@@ -8,10 +8,16 @@ env:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
 
     # Only run one deployment at a time per PR.
     concurrency:
       group: pr-${{ github.event.number }}
+
+    environment:
+      name: review
+      url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - uses: actions/checkout@v4
@@ -34,11 +40,4 @@ jobs:
       - id: deploy
         uses: superfly/fly-pr-review-apps@1.2.0
         with:
-          secrets: ${{ env.DATABASE_URL }}
-
-      - uses: thollander/actions-comment-pull-request@v2
-        with:
-          # GITHUB_TOKEN: ${{ env.GH_TOKEN }} # Required for commenting on pull requests for private repos
-          message: |
-            Fly Preview URL :balloon: : ${{ steps.deploy.outputs.url }}
-            Neon branch :elephant: : ${{ steps.create-branch.outputs.neon_console_branch_url }}
+          secrets: DATABASE_URL=${{ env.DATABASE_URL }}
